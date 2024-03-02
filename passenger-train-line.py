@@ -1,48 +1,46 @@
-from pybricks.pupdevices import ColorDistanceSensor, DCMotor # ColorSensor instead of ColorDistanceSensor if using Mindstorms sensor
+from pybricks.pupdevices import ColorSensor, DCMotor # ColorSensor instead of ColorDistanceSensor if using Mindstorms sensor
 from pybricks.parameters import Color, Port
 from pybricks.tools import wait
 
 motor = DCMotor(Port.A)
-sensor = ColorDistanceSensor(Port.B) # ColorSensor instead of ColorDistanceSensor if using Mindstorms sensor
+sensor = ColorSensor(Port.B) # ColorSensor instead of ColorDistanceSensor if using Mindstorms sensor
 
-station_stop_time_ms = 2500
+station_stop_time_ms = 5000
 eol_stop_time_ms = 5000
-forward_speed = 20
-check_color_interval_ms = 20
+forward_speed = 50
+check_color_interval_ms = 50
+wait_to_pass_overshot_color = 2000
+brake_pause_ms = 100
 
-def check_for_color(color):
-    while sensor.color() != color:
-        wait(check_color_interval_ms)
+def stop():
+    motor.stop()
+    wait(brake_pause_ms)
+    motor.brake()
+
+def reverseSpeed():
+    global forward_speed
+    forward_speed = forward_speed * (-1)
+
+def handleTrainMovement():
+    stop()
+    wait(station_stop_time_ms)
+    motor.dc(forward_speed)
+    wait(wait_to_pass_overshot_color)
+
+motor.dc(forward_speed)
 
 while True:
-    print("looking for green")
-    check_for_color(Color.GREEN)
+    color = sensor.color()
 
-    print("green detected, at station, stopping and continuing")
-    motor.brake()
-    wait(station_stop_time_ms)
-    motor.dc(forward_speed)
+    print("looking for GREEN Or REDs")
+    if (color == Color.GREEN) or (color == Color.RED):
+        print(" %r detected, stopping at station, and reversing" % (color))
+        reverseSpeed()
+        handleTrainMovement()
 
-    print("looking for yellow")
-    check_for_color(Color.YELLOW)
-
-    print("yellow detected, at end of line, stopping and going back to station")
-    motor.brake()
-    wait(eol_stop_time_ms)
-    motor.dc(-forward_speed)
-
-    print("looking for green")
-    check_for_color(Color.GREEN)
-
-    print("green detected, at station, stopping and continuing")
-    motor.brake()
-    wait(station_stop_time_ms)
-    motor.dc(-forward_speed)
-
-    print("looking for red")
-    check_for_color(Color.RED)
-
-    print("red detected, at end of line, stopping and going back to station")
-    motor.brake()
-    wait(eol_stop_time_ms)
-    motor.dc(forward_speed)
+    print("looking for YELLOW")
+    if color == Color.YELLOW:
+        print("YELLOW detected, at station, stopping and continuing")
+        handleTrainMovement()
+   
+    wait(check_color_interval_ms)
